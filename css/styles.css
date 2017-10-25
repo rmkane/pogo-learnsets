@@ -7,3 +7,11 @@
   width: 5em;
   font-weight: bold;
 }
+
+.application .viewport {
+  margin: 0 auto;
+}
+
+.application .viewport .viewport-title {
+  text-align: center;
+}

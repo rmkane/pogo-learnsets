@@ -1,56 +1,48 @@
-class MoveStore extends JsonStore {
-  constructor() {
-    super({
-      url : "assets/data/GAME_MASTER.json",
-      rootProperty : 'itemTemplates',
-      model : Move,
-      autoLoad : true,
-      filterFn : (record) => movePattern.test(record.templateId)
-    });
-  }
-}
-
-class PokemonStore extends JsonStore {
-  constructor() {
-    super({
-      url : "assets/data/GAME_MASTER.json",
-      rootProperty : 'itemTemplates',
-      model : Pokemon,
-      autoLoad : true,
-      filterFn : (record) => pokemonPattern.test(record.templateId)
-    });
-  }
-}
-
-class MoveTextStore extends TextStore {
-  constructor() {
-    super({
-      url : "assets/language/moves.txt",
-    });
-  }
-}
-
-class PokemonTextStore extends TextStore {
-  constructor() {
-    super({
-      url : "assets/language/pokemon.txt",
-    });
-  }
-}
-
 /** ============================= Main ====================================== */
 
 $(document).bind('MoveStoreLoadedEvent', onMoveStoreLoaded);
 $(document).bind('PokemonStoreLoadedEvent', onPokemonStoreLoaded);
-$(document).bind('MoveTextStoreLoadedEvent', onMoveTextStoreLoaded);
-$(document).bind('PokemonTextStoreLoadedEvent', onPokemonTextStoreLoaded);
+$(document).bind('MoveDictionaryLoadedEvent', onMoveDictionaryLoaded);
+$(document).bind('PokemonDictionaryLoadedEvent', onPokemonDictionaryLoaded);
 
 var stores = {
   moveStore : new MoveStore(),
   pokemonStore : new PokemonStore(),
-  moveTextStore : new MoveTextStore(),
-  pokemonTextStore : new PokemonTextStore()
+  moveDictionary : new MoveDictionary(),
+  pokemonDictionary : new PokemonDictionary()
 };
+
+class MovesCombo extends ComboBox {
+  constructor(config) {
+    super($.extend({
+      fieldLabel : 'Moves',
+      store : stores.moveStore,
+      dictionary : stores.moveDictionary,
+      valueField : 'id',
+      displayField : 'name'
+    }, config));
+  }
+
+  lookupText(key, record) {
+    return super.lookupText('move_name_' + ('0000' + record.index).slice(-4));
+  }
+}
+
+class PokemonCombo extends ComboBox {
+  constructor(config) {
+    super($.extend({
+      fieldLabel : 'Pokemon',
+      store : stores.pokemonStore,
+      dictionary : stores.pokemonDictionary,
+      valueField : 'id',
+      displayField : 'name'
+    }, config));
+  }
+
+  lookupText(key, record) {
+    return super.lookupText('pokemon_name_' + ('0000' + record.index).slice(-4));
+  }
+}
 
 function areStoresLoaded() {
   return Object.keys(stores).every(name => stores[name].isLoaded());
@@ -72,40 +64,47 @@ function onPokemonStoreLoaded(e) {
   if (areStoresLoaded()) initialize(); // Wait for all stores to load...
 }
 
-function onMoveTextStoreLoaded() {
-  console.log(stores.moveTextStore.retrieveAll());
+function onMoveDictionaryLoaded() {
+  console.log(stores.moveDictionary);
   
   if (areStoresLoaded()) initialize(); // Wait for all stores to load...
 }
 
-function onPokemonTextStoreLoaded() {
-  console.log(stores.pokemonTextStore.retrieveAll());
+function onPokemonDictionaryLoaded() {
+  console.log(stores.pokemonDictionary);
   
   if (areStoresLoaded()) initialize(); // Wait for all stores to load...
 }
 
 function initialize() {
   console.log('INITIALIZING...');
-
   var pokemonName = 'SCYTHER';
   var pokemon = stores.pokemonStore.retrieveByName(pokemonName)[0];
   var chargedAttackNames = pokemon.chargedAttacks;
-  var chargedAttacks = chargedAttackNames.map(attack => stores.moveStore.retrieveByName(attack)[0]).map(attack => stores.moveTextStore.retrieveById(attack.index)[0].value);
-  console.log(chargedAttacks);
-
-  var pokemonCombo = new ComboBox({
-    fieldLabel : 'Pokemon',
-    store : stores.pokemonStore,
-    valueField : 'id',
-    displayField : 'name'
-  });
-  $('#app-form').append(pokemonCombo.getComponent());
+  var chargedAttacks = chargedAttackNames.map(attackName => stores.moveStore.retrieveByName(attackName, true)[0]);
+  var chargedAttacksDisp = chargedAttacks.map(attack => stores.moveDictionary.lookup('move_name_' + ('0000' + attack.index).slice(-4)))
+  console.log(chargedAttacksDisp);
   
-  var movesCombo = new ComboBox({
-    fieldLabel : 'Moves',
-    store : stores.moveStore,
-    valueField : 'id',
-    displayField : 'name'
+  var pokemonApp = new Application({
+    name : 'Pokemon GO Application',
+    stores : {
+      moveStore : MoveStore,
+      pokemonStore : PokemonStore,
+      moveDictionary : MoveDictionary,
+      pokemonDictionary : PokemonDictionary
+    },
+    viewport : new Viewport({
+      title : 'Pokemon GO Learnsets',
+      width: '80%',
+      items : [{
+        type : PokemonCombo,
+        reference : 'pokemonCombo'
+      }, {
+        type : MovesCombo,
+        reference : 'movesCombo'
+      }]
+    })
   });
-  $('#app-form').append(movesCombo.getComponent());
+
+  pokemonApp.launch(); // Launch the application
 }

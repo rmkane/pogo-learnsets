@@ -1,126 +1,112 @@
-const movePattern = /^V(\d{4})_MOVE_\w+$/;
-const pokemonPattern = /^V(\d{4})_POKEMON_\w+$/;
+class Application {
+  constructor(config) {
+    config = config || config;
+    this.name = config.name;
+    this.stores = config.stores || {};
+    this.viewport = config.viewport;
+  }
 
-class Model {
-  constructor() {
-    if (new.target === Model) {
-      throw new TypeError("Cannot construct Model instances directly");
-    }
-
-    this.id = null;
-    this.name = null;
-    this.index = 0;
+  launch() {
+    $('body').append($('<div>').addClass('application').append(this.viewport.getComponent()));
   }
 }
 
-class Move extends Model {
-  constructor() {
-    super();
+class Viewport {
+  constructor(config) {
+    config = config || config;
+    this.title = config.title;
+    this.items = config.items;
+    this.width = config.width;
     
-    this.type = null;
-    this.power = 0;
-    this.duration = 0;
-    this.energy = 0;
-  }
-
-  calculateDamagePerSecond() {
-    return this.power / (this.duration / 1000.0);
-  }
-
-  calculateEnergyPerSecond() {
-    return this.energy / (this.duration / 1000.0);
-  }
-
-  isFast() {
-    return this.name.includes('_FAST');
-  }
-
-  static parse(data) {
-    var m = new Move();
-    var tokens = data.templateId.match(movePattern);
-    
-    m.id = data.templateId;
-    m.name = data.moveSettings.movementId;
-    m.index = parseInt(tokens[1], 10);
-
-    m.type = data.moveSettings.pokemonType;
-    m.power = data.moveSettings.power;
-    m.duration = data.moveSettings.durationMs;
-    m.energy = data.moveSettings.energyDelta;
-    
-    return m;
-  }
-}
-
-class Pokemon extends Model {
-  constructor() {
-    super();
-
-    this.type1 = null;
-    this.type2 = null;
-    this.height = 0;
-    this.weight = 0;
-    this.stamina = 0;
-    this.attack = 0;
-    this.defense = 0;
-    this.captureRate = 0;
-    this.fleeRate = 0;
-    this.fastAttacks = [];
-    this.chargedAttacks = [];
-    this.buddyDistance = 0;
-    this.buddySize = null;
-    this.evolvesFrom = null;
-    this.family = null;
+    this.initialize();
   }
   
-  static parse(data) {
-    var p = new Pokemon();
-    var tokens = data.templateId.match(pokemonPattern);
+  initialize() {
+    this.items.forEach((item, index) => {
+      if (!(item instanceof Component)) {
+        // Convert the item object into an instance.
+        this.items[index] = new item.type({
+          reference : item.reference
+        });
+      }
+    });
+  }
 
-    p.id = data.templateId;
-    p.name = data.pokemonSettings.pokemonId;
-    p.index = parseInt(tokens[1], 10);
-
-    p.type1 = data.pokemonSettings.type;
-    p.type2 = data.pokemonSettings.type2;
-    p.height = data.pokemonSettings.pokedexHeightM;
-    p.weight = data.pokemonSettings.pokedexWeightKg;
-    p.stamina = data.pokemonSettings.stats.baseStamina;
-    p.attack = data.pokemonSettings.stats.baseAttack;
-    p.defense = data.pokemonSettings.stats.baseDefense;
-    p.captureRate = data.pokemonSettings.encounter.baseCaptureRate;
-    p.fleeRate = data.pokemonSettings.encounter.baseFleeRate;
-    p.fastAttacks = data.pokemonSettings.quickMoves;
-    p.chargedAttacks = data.pokemonSettings.cinematicMoves;
-    p.buddyDistance = data.pokemonSettings.kmBuddyDistance;
-    p.buddySize = data.pokemonSettings.buddySize;
-    p.evolvesFrom = data.pokemonSettings.parentPokemonId;
-    p.family = data.pokemonSettings.familyId;
-
-    return p;
+  getComponent() {
+    return $('<div>').addClass('viewport').css('width', this.width)
+      .append($('<h1>').addClass('viewport-title').text(this.title))
+      .append($('<div>').addClass('viewport-content')
+        .append($('<form>').addClass('viewport-content-form')
+          .append(this.items.map(item => item.getComponent()))));
   }
 }
 
 /*
  * Available Languages: English, Japanese, French, Spanish, German, Italian, Korean, ChineseTraditional, BrazilianPortuguese
  */
-class LanguageVariable extends Model {
-  static parse(data) {
-    var v = new LanguageVariable();
-    var id = parseInt(data['Key'].replace(/[^\d]/g, ''), 10);
+class Dictionary {
+  constructor(config) {
+    if (new.target === Dictionary) {
+      throw new TypeError("Cannot construct Dictionary instances directly");
+    }
+    config = config || {};
+    this.dict = {};
+    this.loaded = false;
+    this.resource = config.resource;
+    this.language = config.language || 'English';
+    this.delimiter = config.delimiter || '\t';
+    this.reload();
+  }
 
-    v.id = id;
-    v.name = data['Key'];
-    v.index = LanguageVariable.INDEX_COUNTER;
-    v.value = data[LanguageVariable.LANGUAGE];
+  isLoaded() {
+    return this.loaded;
+  }
 
-    LanguageVariable.INDEX_COUNTER++;
+  reload(data) {
+    var self = this;
 
-    return v;
+    $.ajax({
+      url: self.resource,
+      type : 'GET',
+      cache : true,
+      dataType : self.dataType,
+      success : (result, status, xhr) => {
+        self.processData(result);
+        self.loaded = true;
+        $.event.trigger(self.constructor.name + 'LoadedEvent');
+      },
+      error : (xhr, status, error) => {
+        throw new Error(error);
+      }
+    });
+  }
+
+  processData(data) {
+    var self = this;
+    var dict = {};
+    var rows = data.trim().split(/\n/);
+    var fields = rows[0].split(this.delimiter).map(self.trimValue);
+    var valueIndex = fields.indexOf(this.language);
+
+    rows.forEach((row, index) => {
+      if (index === 0) {
+        return; // Skip first row.
+      }
+      var values = row.split(this.delimiter).map(self.trimValue);
+      dict[values[0]] = values[valueIndex];
+    });
+
+    this.dict = dict;
+  }
+
+  trimValue(value) {
+    return (value.startsWith('"') && value.endsWith('"')) ? value.slice(1, -1) : value;
+  }
+
+  lookup(key) {
+    return this.dict[key];
   }
 }
-LanguageVariable.INDEX_COUNTER = 0;
-LanguageVariable.LANGUAGE = 'English';
 
 class Store {
   constructor(config) {
@@ -282,11 +268,13 @@ class TextStore extends CsvStore {
 }
 
 class Component {
-  constructor(el) {
+  constructor(el, config) {
     if (new.target === Component) {
       throw new TypeError("Cannot construct Component instances directly");
     }
+    config = config || {};
     this.el = el;
+    this.reference = config.reference;
   }
   
   getComponent() {
@@ -300,7 +288,7 @@ class Component {
 
 class Field extends Component {
   constructor(el, config) {
-    super(el);
+    super(el, config);
     config = config || {};
     this.fieldLabel = config.fieldLabel;
   }
@@ -317,6 +305,7 @@ class ComboBox extends Field {
      super($('<select>').addClass('form-control'), config);
      config = config || {};
      this.store = config.store;
+     this.dictionary = config.dictionary;
      this.valueField = config.valueField;
      this.displayField = config.displayField;
      
@@ -328,7 +317,15 @@ class ComboBox extends Field {
   reload() {
     var self = this;
     self.el.empty().append(self.store.retrieveAll().map(record => {
-      return $('<option>').text(record[self.displayField]).val(record[self.valueField]);
+      var displayText = record[self.displayField];
+      if (self.dictionary) {
+        displayText = self.lookupText(displayText, record);
+      }
+      return $('<option>').text(displayText).val(record[self.valueField]);
     }));
+  }
+  
+  lookupText(key, record) {
+    return this.dictionary.lookup(key);
   }
 }
