@@ -29,20 +29,22 @@ class PokemonCombo extends ComboBox {
 
   lookupText(key, record) {
     var index = '#' + ('000' + record.index).slice(-3);
-    var moveName = super.lookupText('pokemon_name_' + ('0000' + record.index).slice(-4));
-    return index + ' ' + moveName;
+    var pokemonName = super.lookupText('pokemon_name_' + ('0000' + record.index).slice(-4));
+    return index + ' ' + pokemonName;
   }
 }
 
+const language = 'English';
 class PokemonApp extends Application {
   constructor(config) {
     super($.extend({
       title : 'Pokemon GO Application',
+      language : language,
       stores : {
         moveStore : new MoveStore(),
         pokemonStore : new PokemonStore(),
-        moveDictionary : new MoveDictionary(),
-        pokemonDictionary : new PokemonDictionary()
+        moveDictionary : new MoveDictionary(language),
+        pokemonDictionary : new PokemonDictionary(language)
       }
     }, config));
   }

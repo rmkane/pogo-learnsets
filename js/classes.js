@@ -130,18 +130,19 @@ class PokemonStore extends JsonStore {
 }
 
 class MoveDictionary extends Dictionary {
-  constructor() {
+  constructor(language) {
     super({
-      resource : "assets/language/moves.txt"
-      //language : 'Japanese'
+      resource : "assets/language/moves.txt",
+      language : language
     });
   }
 }
 
 class PokemonDictionary extends Dictionary {
-  constructor() {
+  constructor(language) {
     super({
-      resource : "assets/language/pokemon.txt"
+      resource : "assets/language/pokemon.txt",
+      language : language
     });
   }
 }
