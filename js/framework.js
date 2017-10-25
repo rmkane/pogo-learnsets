@@ -306,15 +306,15 @@ class Field extends Component {
   }
 
   getComponent() {
-    return $('<div>').addClass('form-field')
-      .append($('<label>').text(this.fieldLabel).addClass('form-field-label'))
+    return $('<div>').addClass('form-group')
+      .append($('<label>').text(this.fieldLabel))
       .append(super.getComponent());
   }
 }
 
 class ComboBox extends Field {
   constructor(config) {
-     super($('<select>'), config);
+     super($('<select>').addClass('form-control'), config);
      config = config || {};
      this.store = config.store;
      this.valueField = config.valueField;

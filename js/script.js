@@ -99,7 +99,7 @@ function initialize() {
     valueField : 'id',
     displayField : 'name'
   });
-  $('body').append(pokemonCombo.getComponent());
+  $('#app-form').append(pokemonCombo.getComponent());
   
   var movesCombo = new ComboBox({
     fieldLabel : 'Moves',
@@ -107,5 +107,5 @@ function initialize() {
     valueField : 'id',
     displayField : 'name'
   });
-  $('body').append(movesCombo.getComponent());
+  $('#app-form').append(movesCombo.getComponent());
 }
