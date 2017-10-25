@@ -1,13 +1,40 @@
 class Application {
   constructor(config) {
     config = config || config;
+    
     this.name = config.name;
     this.stores = config.stores || {};
     this.viewport = config.viewport;
   }
 
   launch() {
-    $('body').append($('<div>').addClass('application').append(this.viewport.getComponent()));
+    var self = this;
+    Object.keys(self.stores).forEach(name => {
+      var store = self.stores[name];
+      $(document).bind(store.constructor.name + 'LoadedEvent', function(e) {
+        self.onStoreLoadedEvent(e);
+      });
+    });
+    
+    $('body').append(this.getComponent());
+  }
+  
+  getComponent() {
+    return $('<div>').addClass('application').append(this.viewport.getComponent());
+  }
+  
+  onStoreLoadedEvent(e) {
+    if (this.areStoresLoaded()) {
+      this.initialize();
+    }
+  }
+  
+  areStoresLoaded() {
+    return Object.keys(this.stores).every(name => this.stores[name].isLoaded());
+  }
+  
+  initialize() {
+    
   }
 }
 
@@ -17,17 +44,25 @@ class Viewport {
     this.title = config.title;
     this.items = config.items;
     this.width = config.width;
+    this.parent = config.parent;
     
     this.initialize();
   }
   
   initialize() {
-    this.items.forEach((item, index) => {
+    var self = this;
+    
+    self.items.forEach((item, index) => {
       if (!(item instanceof Component)) {
         // Convert the item object into an instance.
-        this.items[index] = new item.type({
-          reference : item.reference
+        var component = new item.type({
+          reference : item.reference,
+          parent : self,
+          store : typeof item.store === 'string' ? self.parent.stores[item.store] : item.store,
+          dictionary : typeof item.dictionary === 'string' ? self.parent.stores[item.dictionary] : item.dictionary
         });
+
+        self.items[index] = component;
       }
     });
   }
@@ -300,6 +335,7 @@ class Component {
     config = config || {};
     this.el = el;
     this.reference = config.reference;
+    this.parent = config.parent;
   }
   
   getComponent() {
@@ -327,6 +363,10 @@ class Field extends Component {
   getValue() {
     return this.el.val();
   }
+  
+  reload() {
+    // Implement...
+  }
 }
 
 class ComboBox extends Field {
@@ -338,9 +378,21 @@ class ComboBox extends Field {
      this.valueField = config.valueField;
      this.displayField = config.displayField;
      
-     if (this.store.isLoaded()) {
-       this.reload();
-     }
+     this.initialize();
+  }
+  
+  initialize() {
+    if (typeof this.store === 'string') {
+      this.store = this.parent.parent.stores[this.store];
+    }
+
+    if (typeof this.dictionary === 'string') {
+      this.dictionary = this.parent.parent.stores[this.dictionary];
+    }
+
+    if (this.store && this.store.isLoaded()) {
+      this.reload();
+    }
   }
 
   reload() {
