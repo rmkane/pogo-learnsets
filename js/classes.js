@@ -108,10 +108,7 @@ class MoveStore extends JsonStore {
       rootProperty : 'itemTemplates',
       model : Move,
       autoLoad : true,
-      sorters : [{
-        field : 'name',
-        direction : 'asc'
-      }],
+      sorters : [ 'name' ],
       filterFn : (record) => movePattern.test(record.templateId)
     });
   }
@@ -142,6 +139,15 @@ class PokemonDictionary extends Dictionary {
   constructor(language) {
     super({
       resource : "assets/language/pokemon.txt",
+      language : language
+    });
+  }
+}
+
+class GeneralDictionary extends Dictionary {
+  constructor(language) {
+    super({
+      resource : "assets/language/general.txt",
       language : language
     });
   }

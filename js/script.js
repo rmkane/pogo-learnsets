@@ -3,16 +3,17 @@ class MovesCombo extends ComboBox {
     super($.extend({
       fieldLabel : 'Moves',
       store : 'moveStore',
-      dictionary : 'moveDictionary',
+      dictionary : [ 'moveDictionary', 'generalDictionary' ],
       valueField : 'id',
       displayField : 'name'
     }, config));
   }
 
-  lookupText(key, record) {
+  lookupText(key, record, dictionary) {
     var moveName = super.lookupText('move_name_' + ('0000' + record.index).slice(-4));
+    var type = this.dictionary['generalDictionary'].lookup(record.type.toLowerCase());
     var moveType = record.isFast() ? 'Fast' : 'Charged';
-    return moveName + ' (' + moveType + ' - ' + record.type + ')';
+    return moveName + ' (' + type + ') - ' + moveType;
   }
 }
 
@@ -27,7 +28,7 @@ class PokemonCombo extends ComboBox {
     }, config));
   }
 
-  lookupText(key, record) {
+  lookupText(key, record, dictionary) {
     var index = '#' + ('000' + record.index).slice(-3);
     var pokemonName = super.lookupText('pokemon_name_' + ('0000' + record.index).slice(-4));
     return index + ' ' + pokemonName;
@@ -44,7 +45,8 @@ class PokemonApp extends Application {
         moveStore : new MoveStore(),
         pokemonStore : new PokemonStore(),
         moveDictionary : new MoveDictionary(language),
-        pokemonDictionary : new PokemonDictionary(language)
+        pokemonDictionary : new PokemonDictionary(language),
+        generalDictionary : new GeneralDictionary()
       }
     }, config));
   }

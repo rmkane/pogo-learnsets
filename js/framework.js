@@ -211,7 +211,6 @@ class Store {
         };
       });
     }
-    
   }
   
   load() {
@@ -268,6 +267,7 @@ class JsonStore extends Store {
   }
 
   beforeLoad(config) {
+    super.beforeLoad(config);
     this.rootProperty = config.rootProperty;
   }
   
@@ -386,9 +386,20 @@ class ComboBox extends Field {
       this.store = this.parent.parent.stores[this.store];
     }
 
+    var newDict = {};
     if (typeof this.dictionary === 'string') {
-      this.dictionary = this.parent.parent.stores[this.dictionary];
+      var key = this.dictionary;
+      newDict[key] = this.parent.parent.stores[key];
+    } else if (Array.isArray(this.dictionary)) {
+      this.dictionary.forEach(dict => {
+        if (typeof dict === 'string') {
+          newDict[dict] = this.parent.parent.stores[dict];
+        } else {
+          newDict[dict.constructor.name] = dict;
+        }
+      });
     }
+    this.dictionary = newDict;
 
     if (this.store && this.store.isLoaded()) {
       this.reload();
@@ -400,13 +411,16 @@ class ComboBox extends Field {
     self.el.empty().append(self.store.retrieveAll().map(record => {
       var displayText = record[self.displayField];
       if (self.dictionary) {
-        displayText = self.lookupText(displayText, record);
+        displayText = self.lookupText(displayText, record, this.dictionary);
       }
       return $('<option>').text(displayText).val(record[self.valueField]);
     }));
   }
   
-  lookupText(key, record) {
-    return this.dictionary.lookup(key);
+  lookupText(key, record, dictionary) {
+    dictionary = dictionary || this.dictionary;
+    var availDicts = Object.keys(dictionary);
+    var targetDict = dictionary[availDicts[0]];
+    return targetDict.lookup(key);
   }
 }
