@@ -380,8 +380,15 @@ class ComboBox extends Field {
      
      this.initialize();
   }
-  
+
   initialize() {
+    var self = this;
+
+    // Fire the change event.
+    this.el.on('change', function(e) {
+      $.event.trigger(self.constructor.name + 'ChangedEvent', [ self.el, self.getValue() ]);
+    });
+    
     if (typeof this.store === 'string') {
       this.store = this.parent.parent.stores[this.store];
     }
@@ -404,6 +411,10 @@ class ComboBox extends Field {
     if (this.store && this.store.isLoaded()) {
       this.reload();
     }
+  }
+  
+  onChange(e) {
+    console.log(this.getValue());
   }
 
   reload() {

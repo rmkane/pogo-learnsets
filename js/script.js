@@ -52,6 +52,14 @@ class PokemonApp extends Application {
   }
   
   initialize() {
+    // Add listeners
+    $(document).bind('PokemonComboChangedEvent', function(e, combo, value) {
+      console.log(value);
+    });
+    $(document).bind('MovesComboChangedEvent', function(e, combo, value) {
+      console.log(value);
+    });
+  
     this.viewport.items.forEach(item => item.reload());
   }
 };
