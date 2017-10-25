@@ -24,7 +24,9 @@ class MovesCombo extends ComboBox {
   }
 
   lookupText(key, record) {
-    return super.lookupText('move_name_' + ('0000' + record.index).slice(-4));
+    var moveName = super.lookupText('move_name_' + ('0000' + record.index).slice(-4));
+    var moveType = record.isFast() ? 'Fast' : 'Charged';
+    return moveName + ' (' + moveType + ' - ' + record.type + ')';
   }
 }
 
@@ -40,7 +42,9 @@ class PokemonCombo extends ComboBox {
   }
 
   lookupText(key, record) {
-    return super.lookupText('pokemon_name_' + ('0000' + record.index).slice(-4));
+    var index = '#' + ('000' + record.index).slice(-3);
+    var moveName = super.lookupText('pokemon_name_' + ('0000' + record.index).slice(-4));
+    return index + ' ' + moveName;
   }
 }
 

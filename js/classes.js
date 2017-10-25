@@ -108,6 +108,10 @@ class MoveStore extends JsonStore {
       rootProperty : 'itemTemplates',
       model : Move,
       autoLoad : true,
+      sorters : [{
+        field : 'name',
+        direction : 'asc'
+      }],
       filterFn : (record) => movePattern.test(record.templateId)
     });
   }

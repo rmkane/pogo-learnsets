@@ -119,6 +119,7 @@ class Store {
     this.dataType = null; // json, text, etc...
     this.records = [];
     this.loaded = false;
+    this.sorters = config.sorters;
     
     this.model = config.model;
     this.rootProperty = config.rootProperty;
@@ -166,6 +167,15 @@ class Store {
   }
 
   beforeLoad(config) {
+    if (this.sorters) {
+      this.sorters = this.sorters.map(sorter => {
+        var isString = typeof sorter === 'string';
+        return {
+          field : isString ? sorter : sorter['field'],
+          direction : isString ? 'asc' : sorter['direction']
+        };
+      });
+    }
     
   }
   
@@ -197,6 +207,21 @@ class Store {
       if (self.filterFn ? self.filterFn(item) : true) {
         self.records.push(self.processRecord(item))
       }
+    });
+    
+    if (self.sorters != null && self.sorters.length > 0) {
+      self.sortBy(self.records, self.sorters);
+    }
+  }
+  
+  sortBy(records, sorters) {
+    records.sort(function(objA, objB) {
+        var result = 0;
+        sorters.forEach(sorter => {
+          result = (objA[sorter.field] < objB[sorter.field]) ? -1 : (objA[sorter.field] > objB[sorter.field]) ? 1 : 0;
+          result *= sorter.direction === 'desc' ? -1 : 1;
+        });
+        return result;
     });
   }
 }
@@ -297,6 +322,10 @@ class Field extends Component {
     return $('<div>').addClass('form-group')
       .append($('<label>').text(this.fieldLabel))
       .append(super.getComponent());
+  }
+
+  getValue() {
+    return this.el.val();
   }
 }
 
