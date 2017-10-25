@@ -280,3 +280,55 @@ class TextStore extends CsvStore {
     }, config || {}));
   }
 }
+
+class Component {
+  constructor(el) {
+    if (new.target === Component) {
+      throw new TypeError("Cannot construct Component instances directly");
+    }
+    this.el = el;
+  }
+  
+  getComponent() {
+    return this.el;
+  }
+  
+  destroy() {
+    this.el.remove();
+  }
+}
+
+class Field extends Component {
+  constructor(el, config) {
+    super(el);
+    config = config || {};
+    this.fieldLabel = config.fieldLabel;
+  }
+
+  getComponent() {
+    return $('<div>').addClass('form-field')
+      .append($('<label>').text(this.fieldLabel).addClass('form-field-label'))
+      .append(super.getComponent());
+  }
+}
+
+class ComboBox extends Field {
+  constructor(config) {
+     super($('<select>'), config);
+     config = config || {};
+     this.store = config.store;
+     this.valueField = config.valueField;
+     this.displayField = config.displayField;
+     
+     if (this.store.isLoaded()) {
+       this.reload();
+     }
+  }
+
+  reload() {
+    var self = this;
+    self.el.empty().append(self.store.retrieveAll().map(record => {
+      return $('<option>').text(record[self.displayField]).val(record[self.valueField]);
+    }));
+  }
+}

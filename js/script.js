@@ -91,6 +91,21 @@ function initialize() {
   var pokemon = stores.pokemonStore.retrieveByName(pokemonName)[0];
   var chargedAttackNames = pokemon.chargedAttacks;
   var chargedAttacks = chargedAttackNames.map(attack => stores.moveStore.retrieveByName(attack)[0]).map(attack => stores.moveTextStore.retrieveById(attack.index)[0].value);
-
   console.log(chargedAttacks);
+
+  var pokemonCombo = new ComboBox({
+    fieldLabel : 'Pokemon',
+    store : stores.pokemonStore,
+    valueField : 'id',
+    displayField : 'name'
+  });
+  $('body').append(pokemonCombo.getComponent());
+  
+  var movesCombo = new ComboBox({
+    fieldLabel : 'Moves',
+    store : stores.moveStore,
+    valueField : 'id',
+    displayField : 'name'
+  });
+  $('body').append(movesCombo.getComponent());
 }
