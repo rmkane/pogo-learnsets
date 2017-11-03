@@ -1,3 +1,22 @@
+function formatKey(prefix, padding, value) {
+  return prefix + '_' + (padding + value).slice(-padding.length);
+}
+function formatId(prefix, value) {
+  return formatKey(prefix, '0000', value);
+}
+function formatAttack(id, store, dict, dictGeneral) {
+  var attack = store.retrieveByName(id, true)[0];
+
+  return {
+    name : dict.lookup(formatId('move_name', attack.index)),
+    type : dictGeneral.lookup(attack.type.toLowerCase())
+    //power : attack.power,
+    //energy : attack.energy,
+    //duration : attack.duration,
+    //moveType : attack.isFast() ? 'Fast' : 'Charged'
+  };
+}
+
 class MovesCombo extends ComboBox {
   constructor(config) {
     super($.extend({
@@ -10,7 +29,7 @@ class MovesCombo extends ComboBox {
   }
 
   lookupText(key, record, dictionary) {
-    var moveName = super.lookupText('move_name_' + ('0000' + record.index).slice(-4));
+    var moveName = super.lookupText(formatId('move_name', record.index));
     var type = this.dictionary['generalDictionary'].lookup(record.type.toLowerCase());
     var moveType = record.isFast() ? 'Fast' : 'Charged';
     return moveName + ' (' + type + ') - ' + moveType;
@@ -30,7 +49,7 @@ class PokemonCombo extends ComboBox {
 
   lookupText(key, record, dictionary) {
     var index = '#' + ('000' + record.index).slice(-3);
-    var pokemonName = super.lookupText('pokemon_name_' + ('0000' + record.index).slice(-4));
+    var pokemonName = super.lookupText(formatId('pokemon_name', record.index));
     return index + ' ' + pokemonName;
   }
 }
@@ -52,9 +71,32 @@ class PokemonApp extends Application {
   }
   
   initialize() {
+    var me = this;
     // Add listeners
     $(document).bind('PokemonComboChangedEvent', function(e, combo, value) {
-      console.log(value);
+      //var viewport = me.viewport;
+      //var pokemonCombo = viewport.items[0];
+      //var pokemonStore = pokemonCombo.store;
+      //var pokemonData = pokemonStore.retrieveById(value)[0];
+      
+      var pokemonStore = me.stores['pokemonStore'];
+      var moveStore = me.stores['moveStore'];
+      var pokemonDictionary = me.stores['pokemonDictionary'];
+      var moveDictionary = me.stores['moveDictionary'];
+      var generalDictionary = me.stores['generalDictionary'];
+      
+      var pokemonData = pokemonStore.retrieveById(value)[0];
+      var index = pokemonData.index;
+      
+      var exportData = {
+        name : pokemonDictionary.lookup(formatId('pokemon_name', index)),
+        category : pokemonDictionary.lookup(formatId('pokemon_category', index)),
+        description : pokemonDictionary.lookup(formatId('pokemon_desc', index)),
+        fastAttacks : pokemonData.fastAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary)),
+        chargedAttacks : pokemonData.chargedAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary))
+      };
+
+      console.log(JSON.stringify(exportData, null, 2));
     });
     $(document).bind('MovesComboChangedEvent', function(e, combo, value) {
       console.log(value);
