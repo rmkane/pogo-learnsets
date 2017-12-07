@@ -1,3 +1,8 @@
+function calculatePageHeight() {
+  var body = document.body, html = document.documentElement;
+  return Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+}
+
 class Application {
   constructor(config) {
     config = config || config;
@@ -73,6 +78,10 @@ class Viewport {
       .append($('<div>').addClass('viewport-content')
         .append($('<form>').addClass('viewport-content-form')
           .append(this.items.map(item => item.getComponent()))));
+  }
+
+  lookupComponent(reference) {
+    return this.items.find(item => item.reference === reference);
   }
 }
 
@@ -352,6 +361,11 @@ class Field extends Component {
     super(el, config);
     config = config || {};
     this.fieldLabel = config.fieldLabel;
+    this.placeholder = config.placeholder;
+    
+    if (this.placeholder) {
+      this.el.attr('placeholder', this.placeholder);
+    }
   }
 
   getComponent() {
@@ -364,6 +378,10 @@ class Field extends Component {
     return this.el.val();
   }
   
+  setValue(value) {
+    return this.el.val(value).trigger('resize');
+  }
+
   reload() {
     // Implement...
   }
@@ -433,5 +451,59 @@ class ComboBox extends Field {
     var availDicts = Object.keys(dictionary);
     var targetDict = dictionary[availDicts[0]];
     return targetDict.lookup(key);
+  }
+}
+
+class TextArea extends Field {
+  constructor(config) {
+     super($('<textarea>').addClass('form-control'), config);
+     config = config || {};
+     this.maxHeightPercent = config.maxHeightPercent || 1.00; // 100%
+     this.initialize();
+  }
+  
+  initialize() {
+    var self = this;
+    
+    var pageHeight = calculatePageHeight();
+    var maxComponentHeight = Math.floor(pageHeight * self.maxHeightPercent);    
+    $(this.el).css({
+      maxHeight : maxComponentHeight + 'px'
+    }).autosize();
+
+    // Fire the change event.
+    this.el.on('change', function(e) {
+      $.event.trigger(self.constructor.name + 'ChangedEvent', [ self.el, self.getValue() ]);
+    });
+    
+    //this.el.on('keyup', function(e) {
+    //  var pageHeight = calculatePageHeight();
+    //  var scrollHeight = this.scrollHeight;
+    //  var maxComponentHeight = Math.floor(pageHeight * self.maxHeightPercent);
+    //  var calculatedHeight = Math.min(scrollHeight, maxComponentHeight);
+    //  
+    //  this.style.overflow = calculatedHeight < maxComponentHeight ? 'hidden' : 'scroll';
+    //  this.style.height = 0;
+    //  
+    //  if (self.getValue().trim().length === 0) {
+    //    this.style.height = 'auto';
+    //  } else {
+    //    this.style.height = calculatedHeight + 'px';
+    //  }
+    //});
+  }
+
+  reload() {
+    
+  }
+}
+
+class HtmlComponent extends Component {
+  constructor(el, config) {
+    super(el, config);
+  }
+
+  reload() {
+    // Implement...
   }
 }

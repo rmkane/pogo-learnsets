@@ -36,6 +36,13 @@ class MovesCombo extends ComboBox {
   }
 }
 
+class Separator extends HtmlComponent {
+  constructor(config) {
+     super($('<hr>'), config);
+     config = config || {};
+  }
+}
+
 class PokemonCombo extends ComboBox {
   constructor(config) {
     super($.extend({
@@ -51,6 +58,16 @@ class PokemonCombo extends ComboBox {
     var index = '#' + ('000' + record.index).slice(-3);
     var pokemonName = super.lookupText(formatId('pokemon_name', record.index));
     return index + ' ' + pokemonName;
+  }
+}
+
+class OutputArea extends TextArea {
+  constructor(config) {
+    super($.extend({
+      fieldLabel : 'Output',
+      maxHeightPercent : 0.667,
+      placeholder : 'Data...'
+    }, config));
   }
 }
 
@@ -90,13 +107,17 @@ class PokemonApp extends Application {
       
       var exportData = {
         name : pokemonDictionary.lookup(formatId('pokemon_name', index)),
+        types : [ pokemonData.type1, pokemonData.type2 ].filter(x => x != null).map(type => generalDictionary.lookup(type.toLowerCase())),
         category : pokemonDictionary.lookup(formatId('pokemon_category', index)),
         description : pokemonDictionary.lookup(formatId('pokemon_desc', index)),
         fastAttacks : pokemonData.fastAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary)),
         chargedAttacks : pokemonData.chargedAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary))
       };
 
-      console.log(JSON.stringify(exportData, null, 2));
+      var jsonExport = JSON.stringify(exportData, null, 2);
+      var outputField = me.viewport.lookupComponent('output');
+
+      outputField.setValue(jsonExport);
     });
     $(document).bind('MovesComboChangedEvent', function(e, combo, value) {
       console.log(value);
@@ -117,6 +138,12 @@ pokemonApp.viewport = new Viewport({
   }, {
     type : MovesCombo,
     reference : 'movesCombo'
+  }, {
+    type : Separator,
+    reference : 'sparator'
+  }, {
+    type : OutputArea,
+    reference : 'output'
   }]
 });
 pokemonApp.launch(); // Launch the application
