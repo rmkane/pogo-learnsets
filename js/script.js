@@ -88,8 +88,11 @@ class PokemonApp extends Application {
       var pokemonData = pokemonStore.retrieveById(value)[0];
       var index = pokemonData.index;
       
+      console.log(pokemonData);
+      
       var exportData = {
         name : pokemonDictionary.lookup(formatId('pokemon_name', index)),
+        types : [ pokemonData.type1, pokemonData.type2 ].filter(x => x != null).map(type => generalDictionary.lookup(type.toLowerCase())),
         category : pokemonDictionary.lookup(formatId('pokemon_category', index)),
         description : pokemonDictionary.lookup(formatId('pokemon_desc', index)),
         fastAttacks : pokemonData.fastAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary)),
@@ -117,6 +120,9 @@ pokemonApp.viewport = new Viewport({
   }, {
     type : MovesCombo,
     reference : 'movesCombo'
+  }, {
+    type : 'html',
+    value : '<br />'
   }]
 });
 pokemonApp.launch(); // Launch the application

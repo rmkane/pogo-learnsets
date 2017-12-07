@@ -54,14 +54,22 @@ class Viewport {
     
     self.items.forEach((item, index) => {
       if (!(item instanceof Component)) {
-        // Convert the item object into an instance.
-        var component = new item.type({
-          reference : item.reference,
-          parent : self,
-          store : typeof item.store === 'string' ? self.parent.stores[item.store] : item.store,
-          dictionary : typeof item.dictionary === 'string' ? self.parent.stores[item.dictionary] : item.dictionary
-        });
-
+        var component;
+        
+        if (item.type === 'html') {
+          component = new HtmlComponent({
+            el : item.value
+          });
+        } else {
+          // Convert the item object into an instance.
+          component = new item.type({
+            reference : item.reference,
+            parent : self,
+            store : typeof item.store === 'string' ? self.parent.stores[item.store] : item.store,
+            dictionary : typeof item.dictionary === 'string' ? self.parent.stores[item.dictionary] : item.dictionary
+          });
+        }
+        
         self.items[index] = component;
       }
     });
@@ -344,6 +352,16 @@ class Component {
   
   destroy() {
     this.el.remove();
+  }
+}
+
+class HtmlComponent extends Component {
+  constructor(el, config) {
+    super(el, config);
+  }
+
+  reload() {
+    // Implement...
   }
 }
 
