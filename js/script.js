@@ -116,7 +116,10 @@ class PokemonApp extends Application {
 
       var jsonExport = JSON.stringify(exportData, null, 2);
       var outputField = me.viewport.lookupComponent('output');
-
+      var wikiExport = jsonToWiki(exportData);
+      
+      console.log(wikiExport);
+      
       outputField.setValue(jsonExport);
     });
     $(document).bind('MovesComboChangedEvent', function(e, combo, value) {
@@ -126,6 +129,10 @@ class PokemonApp extends Application {
     this.viewport.items.forEach(item => item.reload());
   }
 };
+
+function jsonToWiki(jsonData) {
+  return pokemonWikiTemplate(jsonData).replace(/\\([{}])/g, '$1').replace(/&#x27;/g, "'");
+}
 
 var pokemonApp = new PokemonApp();
 pokemonApp.viewport = new Viewport({
