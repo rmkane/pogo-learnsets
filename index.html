@@ -50,29 +50,42 @@
           },
           render_types_intro : function(types) {
             return types.map(type => '[[' + type + ']]').join(', ');
+          },
+          render_weaknesses : function(types) {
+            return types.map((type, index) => ' | weak' + (index + 1) + '            = ' + type).join('\n');
           }
         });
       });
-      
+
+      // https://github.com/zonination/pokemon-chart/blob/master/chart.csv
       var typeEffectiveness = null;
-      $.get('assets/Type Effectiveness.csv', function (data) {
+      $.get('assets/effectiveness.csv', function (data) {
         var csv = parseCsv(data);
         typeEffectiveness = csvToJson(csv, 'Type');
       });
       
-      function getWeaknesses(types) {
-        console.log(typeEffectiveness);
-        var weaknesses = Array.from(new Set(types.reduce((arr, type) => arr.concat(typeEffectiveness[type]['Vulnerable']), [])));
-        types.forEach(type => {
-          weaknesses.removeStringIfPresent(type);
-          typeEffectiveness[type]['Strong'].forEach(strength => {
-            weaknesses.removeStringIfPresent(strength);
-          });
-          typeEffectiveness[type]['Resistant'].forEach(strength => {
-            weaknesses.removeStringIfPresent(strength);
+      function calculateWeaknessMatrix(types) {
+        var allTypes = Object.keys(typeEffectiveness);
+        var typeMap = allTypes.reduce(function(obj, type) {
+          obj[type] = 1.0;
+          return obj;
+        }, {});
+        allTypes.forEach(function(typeAtk) {
+          types.forEach(function(typeDef) {
+            typeMap[typeAtk] *= typeEffectiveness[typeAtk][typeDef];
           });
         });
-        return weaknesses;
+        return typeMap
+      }
+
+      function getWeaknesses(types) {
+        var typeMap = calculateWeaknessMatrix(types);
+        return Object.keys(typeMap).reduce(function(types, type) {
+          if (typeMap[type] === 2) {
+            types.push(type);
+          }
+          return types;
+        }, []).sort()
       }
       
       function parseCsv(data) {
@@ -80,11 +93,11 @@
       }
       
       function csvToJson(csv, key) {      
-        var keyIndex = csv[0].indexOf(key);
-        var fields = csv[0].map(field => field.replace(/\W+/g, ''));
+        var fields = csv[0].slice(1).map(field => field.replace(/\W+/g, ''));
+        
         return csv.slice(1).reduce(function(dict, row, r) {
-          dict[row[keyIndex]] = fields.reduce(function(record, field, c) {
-            record[field] = row[c].split(/,\s+/g).filter(v => v != null && v !== '');
+          dict[row[0]] = fields.reduce(function(record, field, c) {
+            record[field] = parseFloat(row[c + 1].split(/,\s+/g).filter(v => v != null && v !== ''));
             return record;
           }, {});
           return dict;

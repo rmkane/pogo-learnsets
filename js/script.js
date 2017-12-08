@@ -105,7 +105,8 @@ class PokemonApp extends Application {
       var pokemonData = pokemonStore.retrieveById(value)[0];
       var index = pokemonData.index;
       var types = [ pokemonData.type1, pokemonData.type2 ].filter(x => x != null).map(type => generalDictionary.lookup(type.toLowerCase()));
-      
+      var weaknesses = getWeaknesses(types);
+
       var prevPokemon = pokemonStore.retrieveByIndex(index - 1)[0];
       var nextPokemon = pokemonStore.retrieveByIndex(index + 1)[0];
       
@@ -127,18 +128,16 @@ class PokemonApp extends Application {
         prevPokemonIndex : prevPokemon.index,
         prevPokemonName : pokemonDictionary.lookup(formatId('pokemon_name', prevPokemon.index)),
         nextPokemonIndex : nextPokemon.index,
-        nextPokemonName : pokemonDictionary.lookup(formatId('pokemon_name', nextPokemon.index))
+        nextPokemonName : pokemonDictionary.lookup(formatId('pokemon_name', nextPokemon.index)),
+        weaknesses : weaknesses
       };
 
       var jsonExport = JSON.stringify(exportData, null, 2);
       var outputField = me.viewport.lookupComponent('output');
       var wikiExport = jsonToWiki(exportData);
-      
+
       console.log(jsonExport);
       outputField.setValue(wikiExport);
-      
-      var weaknesses = getWeaknesses(types);
-      console.log(weaknesses);
     });
     $(document).bind('MovesComboChangedEvent', function(e, combo, value) {
       console.log(value);
