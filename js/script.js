@@ -109,7 +109,9 @@ class PokemonApp extends Application {
 
       var prevPokemon = pokemonStore.retrieveByIndex(index - 1)[0];
       var nextPokemon = pokemonStore.retrieveByIndex(index + 1)[0];
-      
+      var familyPokemon = pokemonStore.retrieveByName(pokemonData.family.replace('FAMILY_', ''), true)[0];
+      var evolutionPokemon = pokemonData.evolution ? pokemonStore.retrieveByName(pokemonData.evolution, true)[0] : null;
+
       var exportData = {
         index : index,
         name : pokemonDictionary.lookup(formatId('pokemon_name', index)),
@@ -129,7 +131,10 @@ class PokemonApp extends Application {
         prevPokemonName : pokemonDictionary.lookup(formatId('pokemon_name', prevPokemon.index)),
         nextPokemonIndex : nextPokemon.index,
         nextPokemonName : pokemonDictionary.lookup(formatId('pokemon_name', nextPokemon.index)),
-        weaknesses : weaknesses
+        weaknesses : weaknesses,
+        family : pokemonDictionary.lookup(formatId('pokemon_name', familyPokemon.index)),
+        evolution : evolutionPokemon ? pokemonDictionary.lookup(formatId('pokemon_name', evolutionPokemon.index)) : 'NULL',
+        candyCost : pokemonData.candyCost
       };
 
       var jsonExport = JSON.stringify(exportData, null, 2);

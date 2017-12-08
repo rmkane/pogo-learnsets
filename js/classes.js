@@ -71,6 +71,8 @@ class Pokemon extends Model {
     this.buddySize = null;
     this.evolvesFrom = null;
     this.family = null;
+    this.evolution = null;
+    this.candyCost = 0;
   }
   
   static parse(data) {
@@ -96,6 +98,11 @@ class Pokemon extends Model {
     p.buddySize = data.pokemonSettings.buddySize;
     p.evolvesFrom = data.pokemonSettings.parentPokemonId;
     p.family = data.pokemonSettings.familyId;
+
+    if (data.pokemonSettings.evolutionBranch && data.pokemonSettings.evolutionBranch.length > 0) {
+      p.evolution = data.pokemonSettings.evolutionBranch[0].evolution;
+      p.candyCost = data.pokemonSettings.evolutionBranch[0].candyCost;
+    }
 
     return p;
   }
