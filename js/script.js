@@ -1,4 +1,4 @@
-function formatKey(prefix, padding, value) {
+﻿function formatKey(prefix, padding, value) {
   return prefix + '_' + (padding + value).slice(-padding.length);
 }
 function formatId(prefix, value) {
@@ -22,8 +22,8 @@ class MovesCombo extends ComboBox {
     super($.extend({
       fieldLabel : 'Moves',
       store : 'moveStore',
-      dictionary : [ 'moveDictionary', 'generalDictionary' ],
       valueField : 'id',
+      dictionary : [ 'moveDictionary', 'generalDictionary' ],
       displayField : 'name'
     }, config));
   }
@@ -104,23 +104,41 @@ class PokemonApp extends Application {
       
       var pokemonData = pokemonStore.retrieveById(value)[0];
       var index = pokemonData.index;
+      var types = [ pokemonData.type1, pokemonData.type2 ].filter(x => x != null).map(type => generalDictionary.lookup(type.toLowerCase()));
+      
+      var prevPokemon = pokemonStore.retrieveByIndex(index - 1)[0];
+      var nextPokemon = pokemonStore.retrieveByIndex(index + 1)[0];
       
       var exportData = {
+        index : index,
         name : pokemonDictionary.lookup(formatId('pokemon_name', index)),
-        types : [ pokemonData.type1, pokemonData.type2 ].filter(x => x != null).map(type => generalDictionary.lookup(type.toLowerCase())),
+        types : types,
         category : pokemonDictionary.lookup(formatId('pokemon_category', index)),
         description : pokemonDictionary.lookup(formatId('pokemon_desc', index)),
         fastAttacks : pokemonData.fastAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary)),
-        chargedAttacks : pokemonData.chargedAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary))
+        chargedAttacks : pokemonData.chargedAttacks.map(name => formatAttack(name, moveStore, moveDictionary, generalDictionary)),
+        height : parseFloat(pokemonData.height),
+        weight : parseFloat(pokemonData.weight),
+        stamina : parseInt(pokemonData.stamina, 10),
+        attack : parseInt(pokemonData.attack),
+        defense : parseInt(pokemonData.defense),
+        fleeRate : parseFloat(pokemonData.fleeRate),
+        captureRate : parseFloat(pokemonData.captureRate),
+        prevPokemonIndex : prevPokemon.index,
+        prevPokemonName : pokemonDictionary.lookup(formatId('pokemon_name', prevPokemon.index)),
+        nextPokemonIndex : nextPokemon.index,
+        nextPokemonName : pokemonDictionary.lookup(formatId('pokemon_name', nextPokemon.index))
       };
 
       var jsonExport = JSON.stringify(exportData, null, 2);
       var outputField = me.viewport.lookupComponent('output');
       var wikiExport = jsonToWiki(exportData);
       
-      console.log(wikiExport);
+      console.log(jsonExport);
+      outputField.setValue(wikiExport);
       
-      outputField.setValue(jsonExport);
+      var weaknesses = getWeaknesses(types);
+      console.log(weaknesses);
     });
     $(document).bind('MovesComboChangedEvent', function(e, combo, value) {
       console.log(value);
@@ -131,7 +149,7 @@ class PokemonApp extends Application {
 };
 
 function jsonToWiki(jsonData) {
-  return pokemonWikiTemplate(jsonData).replace(/\\([{}])/g, '$1').replace(/&#x27;/g, "'");
+  return pokemonWikiTemplate(jsonData).replace(/\\([{}])/g, '$1').replace(/&#x27;/g, "'").replace(/&#x3D;/g, '=').replace(/\bPokemon\b/g, 'Pokémon').replace(/\bPokedex\b/g, 'Pokédex');
 }
 
 var pokemonApp = new PokemonApp();

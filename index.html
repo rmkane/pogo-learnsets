@@ -1,6 +1,7 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
     <meta charset="utf-8">
     <title>Pokemon GO Learnsets</title>
     <meta name="description" content="Pokemon GO Learnsets">
@@ -16,10 +17,79 @@
   </head>
   <body>
     <script type="text/javascript">
+      Array.prototype.removeStringIfPresent = function(str) {
+        var foundIndex = this.findIndex(item => item.trim() === str.trim());
+        if (foundIndex > -1) {
+          this.splice(foundIndex, 1);
+        }
+        return this;
+      };
+    
       var pokemonWikiTemplate = null;
       $.get('assets/templates/pokemon.hbs', function (data) {
         pokemonWikiTemplate = Handlebars.compile(data);
-      })
+        
+        Handlebars.registerHelper({
+          calc_region : function(index) {
+            if (index >= 0 && index <= 151) return 'Kanto';
+            if (index >= 152 && index <= 251) return 'Johto';
+            if (index >= 252 && index <= 386) return 'Hoenn';
+            return 'Unknown';
+          },
+          frmt_index : function(index) {
+            return ('000' + index).substr(-3);
+          },
+          frmt_percentage : function(value) {
+            return Math.floor(100 * value) + '%';
+          },
+          render_attacks : function(attacks, type) {
+            return attacks.map(attack => '* {{Move ' + type + '|' + attack.name + '}}').join('\n');
+          },
+          render_types : function(types) {
+            return types.map((type, index) => ' | type' + (index + 1) + '            = ' + type).join('\n');
+          },
+          render_types_intro : function(types) {
+            return types.map(type => '[[' + type + ']]').join(', ');
+          }
+        });
+      });
+      
+      var typeEffectiveness = null;
+      $.get('assets/Type Effectiveness.csv', function (data) {
+        var csv = parseCsv(data);
+        typeEffectiveness = csvToJson(csv, 'Type');
+      });
+      
+      function getWeaknesses(types) {
+        console.log(typeEffectiveness);
+        var weaknesses = Array.from(new Set(types.reduce((arr, type) => arr.concat(typeEffectiveness[type]['Vulnerable']), [])));
+        types.forEach(type => {
+          weaknesses.removeStringIfPresent(type);
+          typeEffectiveness[type]['Strong'].forEach(strength => {
+            weaknesses.removeStringIfPresent(strength);
+          });
+          typeEffectiveness[type]['Resistant'].forEach(strength => {
+            weaknesses.removeStringIfPresent(strength);
+          });
+        });
+        return weaknesses;
+      }
+      
+      function parseCsv(data) {
+        return data.split('\n').map(line => line.split('\t').map(col => col.trim()))
+      }
+      
+      function csvToJson(csv, key) {      
+        var keyIndex = csv[0].indexOf(key);
+        var fields = csv[0].map(field => field.replace(/\W+/g, ''));
+        return csv.slice(1).reduce(function(dict, row, r) {
+          dict[row[keyIndex]] = fields.reduce(function(record, field, c) {
+            record[field] = row[c].split(/,\s+/g).filter(v => v != null && v !== '');
+            return record;
+          }, {});
+          return dict;
+        }, {});
+      }
     </script>
   
     <script src="js/jquery.autosize.js"></script>
