@@ -24,7 +24,26 @@
         }
         return this;
       };
-    
+      
+      // https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/padEnd
+      if (!String.prototype.padEnd) {
+        String.prototype.padEnd = function padEnd(targetLength, padString) {
+          targetLength = targetLength>>0; //floor if number or convert non-number to 0;
+          padString = String(padString || ' ');
+          if (this.length > targetLength) {
+            return String(this);
+          }
+          else {
+            targetLength = targetLength-this.length;
+            if (targetLength > padString.length) {
+              padString += padString.repeat(targetLength/padString.length); //append to original to ensure we are longer than needed
+            }
+            return String(this) + padString.slice(0,targetLength);
+          }
+        };
+      }
+
       var pokemonWikiTemplate = null;
       $.get('assets/templates/pokemon.hbs', function (data) {
         pokemonWikiTemplate = Handlebars.compile(data);
@@ -53,6 +72,9 @@
           },
           render_weaknesses : function(types) {
             return types.map((type, index) => ' | weak' + (index + 1) + '            = ' + type).join('\n');
+          },
+          render_genders : function(genders) {
+            return Object.keys(genders).map(gender => ' | ' + gender.padEnd(16, ' ') + ' = ' + (genders[gender] * 100).toFixed(2).replace('.00', '').replace('.50', '.5') + '%').join('\n');
           }
         });
       });

@@ -1,5 +1,6 @@
 const movePattern = /^V(\d{4})_MOVE_\w+$/;
 const pokemonPattern = /^V(\d{4})_POKEMON_\w+$/;
+const genderPattern = /^SPAWN_V(\d{4})_POKEMON_\w+$/;
 
 class Model {
   constructor() {
@@ -112,6 +113,37 @@ class Pokemon extends Model {
   }
 }
 
+class Gender extends Model {
+  constructor() {
+    super();
+
+    this.malePercent = 0;
+    this.femalePercent = 0;
+    this.genderlessPercent = 0;
+  }
+  
+  static parse(data) {
+    var p = new Gender();
+    var tokens = data.templateId.match(genderPattern);
+
+    p.id = data.templateId;
+    p.name = data.genderSettings.name;
+    p.index = parseInt(tokens[1], 10);
+
+    if (data.genderSettings.gender.malePercent) {
+      p.malePercent = data.genderSettings.gender.malePercent;
+    }
+    if (data.genderSettings.gender.femalePercent) {
+      p.femalePercent = data.genderSettings.gender.femalePercent;
+    }
+    if (data.genderSettings.gender.genderlessPercent) {
+      p.genderlessPercent = data.genderSettings.gender.genderlessPercent;
+    }
+
+    return p;
+  }
+}
+
 class MoveStore extends JsonStore {
   constructor() {
     super({
@@ -121,6 +153,18 @@ class MoveStore extends JsonStore {
       autoLoad : true,
       sorters : [ 'name' ],
       filterFn : (record) => movePattern.test(record.templateId)
+    });
+  }
+}
+
+class GenderStore extends JsonStore {
+  constructor() {
+    super({
+      url : "assets/data/GAME_MASTER.json",
+      rootProperty : 'itemTemplates',
+      model : Gender,
+      autoLoad : true,
+      filterFn : (record) => genderPattern.test(record.templateId)
     });
   }
 }

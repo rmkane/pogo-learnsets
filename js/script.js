@@ -80,6 +80,7 @@ class PokemonApp extends Application {
       stores : {
         moveStore : new MoveStore(),
         pokemonStore : new PokemonStore(),
+        genderStore : new GenderStore(),
         moveDictionary : new MoveDictionary(language),
         pokemonDictionary : new PokemonDictionary(language),
         generalDictionary : new GeneralDictionary()
@@ -98,6 +99,7 @@ class PokemonApp extends Application {
       
       var pokemonStore = me.stores['pokemonStore'];
       var moveStore = me.stores['moveStore'];
+      var genderStore = me.stores['genderStore'];
       var pokemonDictionary = me.stores['pokemonDictionary'];
       var moveDictionary = me.stores['moveDictionary'];
       var generalDictionary = me.stores['generalDictionary'];
@@ -112,6 +114,15 @@ class PokemonApp extends Application {
       var familyPokemon = pokemonStore.retrieveByName(pokemonData.family.replace('FAMILY_', ''), true)[0];
       var evolutionPokemon = pokemonData.evolution ? pokemonStore.retrieveByName(pokemonData.evolution, true)[0] : null;
 
+      var genderData = genderStore.retrieveByIndex(index)[0];
+      var genders = {};
+      if (genderData.genderlessPercent > 0) {
+        genders['genderless'] = genderData.genderlessPercent;
+      } else {
+        genders['male'] = genderData.malePercent;
+        genders['female'] = genderData.femalePercent;
+      }
+      
       var exportData = {
         index : index,
         name : pokemonDictionary.lookup(formatId('pokemon_name', index)),
@@ -134,7 +145,8 @@ class PokemonApp extends Application {
         weaknesses : weaknesses,
         family : pokemonDictionary.lookup(formatId('pokemon_name', familyPokemon.index)),
         evolution : evolutionPokemon ? pokemonDictionary.lookup(formatId('pokemon_name', evolutionPokemon.index)) : 'NULL',
-        candyCost : pokemonData.candyCost
+        candyCost : pokemonData.candyCost,
+        genders : genders
       };
 
       var jsonExport = JSON.stringify(exportData, null, 2);
