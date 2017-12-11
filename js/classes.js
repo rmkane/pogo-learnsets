@@ -22,13 +22,17 @@ class Move extends Model {
     this.duration = 0;
     this.energy = 0;
   }
+  
+  calculateCooldown() {
+    return this.duration / 1000.0;
+  }
 
   calculateDamagePerSecond() {
-    return this.power / (this.duration / 1000.0);
+    return this.power / this.calculateCooldown();
   }
 
   calculateEnergyPerSecond() {
-    return this.energy / (this.duration / 1000.0);
+    return this.energy / this.calculateCooldown();
   }
 
   isFast() {

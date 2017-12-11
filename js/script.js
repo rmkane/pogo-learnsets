@@ -145,7 +145,78 @@ class PokemonApp extends Application {
       outputField.setValue(wikiExport);
     });
     $(document).bind('MovesComboChangedEvent', function(e, combo, value) {
-      console.log(value);
+      var outputField = me.viewport.lookupComponent('output');
+      
+      var pokemonStore = me.stores['pokemonStore'];
+      var moveStore = me.stores['moveStore'];
+      var pokemonDictionary = me.stores['pokemonDictionary'];
+      var moveDictionary = me.stores['moveDictionary'];
+      var generalDictionary = me.stores['generalDictionary'];
+      
+      var moveData = moveStore.retrieveById(value)[0];
+      var index = moveStore.index;
+      var moveType = generalDictionary.lookup(moveData.type.toLowerCase());
+      var moveIsFast = moveData.isFast() ? 'Fast' : 'Charged';
+      
+      var pokemonWithAttack = pokemonStore.records.reduce((result, pokemon) => {
+        var hasMove = pokemon.fastAttacks.concat(pokemon.chargedAttacks).some(attack => {
+          return moveData.id.indexOf(attack) > -1;
+        });
+        if (hasMove) {
+          result.push(pokemon);
+        }
+        return result;
+      }, []);
+     
+      var pageData = [
+        '{{Infobox Moves',
+        ' | title3        = ' + (moveDictionary.lookup(formatId('move_name', moveData.index)) || moveData.name),
+        ' | use           = ' + moveIsFast,
+        ' | type          = ' + moveType,
+        ' | attack_power  = ' + moveData.power,
+        ' | specialgauge  = ' + (!moveData.isFast() ? Math.abs(Math.ceil(100 / moveData.energy)) : ''),
+        ' | energy        = ' + (moveData.isFast() ? moveData.energy : ''),
+        ' | cooldown      = ' + moveData.calculateCooldown().toFixed(2),
+        ' | dps           = ' + moveData.calculateDamagePerSecond().toFixed(2),
+        ' | eps           = ' + moveData.calculateEnergyPerSecond().toFixed(2),
+        '}}',
+        '==Pokémon with attack==',
+        '{| class="article-table"',
+        '! # !! Name !! Type 1 !! Type 2',
+        '|-',
+        (pokemonWithAttack.length > 0 ? pokemonWithAttack.map(pokemon => {
+          return '| {{Move learn|' + pokemonDictionary.lookup(formatId('pokemon_name', pokemon.index)) + '}}';
+        }).join('\n|-\n') : '| colspan="4" align="center" | \'\'None\'\''),
+        '|}',
+        '',
+        '==Super-effective against==',
+        '<dpl>category=Weak to ' + moveType + '</dpl>',
+        '',
+        '[[Category:Attacks]]',
+        '[[Category:' + moveIsFast + ' attacks]]'
+      ].join('\n');
+      
+      var allMoves = [[
+        'id',
+        'name',
+        'type',
+        'power',
+        'dps',
+        'eps',
+        'is_fast',
+      ].join('\t')].concat(moveStore.records.map(record => {
+        return [
+          record.index,
+          moveDictionary.lookup(formatId('move_name', record.index)) || record.name,
+          generalDictionary.lookup(record.type.toLowerCase()),
+          record.power,
+          record.calculateDamagePerSecond(),
+          record.calculateEnergyPerSecond(),
+          record.isFast()
+        ].join('\t');
+      })).join('\n');
+      
+      outputField.setValue(pageData);
     });
   
     this.viewport.items.forEach(item => item.reload());
